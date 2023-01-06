@@ -1,6 +1,6 @@
 package tnet
 
-import "tinx/tiface"
+import "github.com/sisobobo/tinx/tiface"
 
 type Message struct {
 	handlerId interface{}

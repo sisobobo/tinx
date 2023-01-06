@@ -5,8 +5,8 @@ package tpack
 */
 import (
 	"bufio"
-	"tinx/tiface"
-	"tinx/tlog"
+	"github.com/sisobobo/tinx/tiface"
+	"github.com/sisobobo/tinx/tlog"
 )
 
 type Delimiter struct {

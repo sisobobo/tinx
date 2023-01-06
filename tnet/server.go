@@ -2,9 +2,9 @@ package tnet
 
 import (
 	"fmt"
+	"github.com/sisobobo/tinx/tiface"
+	"github.com/sisobobo/tinx/tlog"
 	"net"
-	"tinx/tiface"
-	"tinx/tlog"
 )
 
 type Server struct {

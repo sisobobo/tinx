@@ -2,10 +2,10 @@ package tnet
 
 import (
 	"bufio"
+	"github.com/sisobobo/tinx/tiface"
+	"github.com/sisobobo/tinx/tlog"
 	"io"
 	"net"
-	"tinx/tiface"
-	"tinx/tlog"
 )
 
 type Channel struct {

@@ -1,8 +1,8 @@
 package tnet
 
 import (
-	"tinx/tiface"
-	"tinx/tlog"
+	"github.com/sisobobo/tinx/tiface"
+	"github.com/sisobobo/tinx/tlog"
 )
 
 type HandlerManager struct {
