@@ -16,8 +16,14 @@ type Channel struct {
 	writer *bufio.Writer // writer
 }
 
-func (c *Channel) WriteAndFlush(data []byte) {
+func (c *Channel) WriteAndFlush(message tiface.Message) {
+	data, err := c.server.pack.Encode(message)
+	if err != nil {
+		tlog.Error("encode error : %s ", err)
+		return
+	}
 	c.writer.Write(data)
+	c.server.pack.Pack(c.writer)
 	c.writer.Flush()
 }
 
@@ -47,6 +53,7 @@ func NewChannel(server *Server, conn *net.TCPConn) tiface.IChannel {
 func (c *Channel) open() {
 	tlog.INFO("连接：%s", c.conn.RemoteAddr().String())
 	go c.startReader()
+	go c.startWriter()
 }
 
 func (c *Channel) close() {
@@ -74,4 +81,8 @@ func (c *Channel) startReader() {
 			}
 		}
 	}
+}
+
+func (c *Channel) startWriter() {
+	//c.server.pack.Encode()
 }
