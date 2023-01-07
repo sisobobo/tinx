@@ -4,8 +4,13 @@ import (
 	"bufio"
 )
 
+type HandlerKey any
+type Message any
+
 type IPack interface {
-	GetMaxFrameLength() uint32                   //获取包的最大长度
-	UnPack(reader *bufio.Reader) ([]byte, error) //粘包/分包处理
-	Decode(dat []byte) (IMessage, error)         //解析成IMessage
+	GetMaxFrameLength() uint32
+	Pack(writer *bufio.Writer) error
+	UnPack(reader *bufio.Reader) ([]byte, error)
+	Decode(data []byte) (HandlerKey, Message, error)
+	Encode(message Message) ([]byte, error)
 }

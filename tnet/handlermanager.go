@@ -15,15 +15,15 @@ func newHandlerManager() *HandlerManager {
 	}
 }
 
-func (m *HandlerManager) doMsgHandler(channel tiface.IChannel, message tiface.IMessage) {
-	handler, ok := m.handlers[message.HandlerId()]
+func (m *HandlerManager) doMsgHandler(channel tiface.IChannel, key tiface.HandlerKey, message tiface.Message) {
+	handler, ok := m.handlers[key]
 	if !ok {
-		tlog.WARN("handler %v is not found !", message.HandlerId())
+		tlog.WARN("handler %v is not found !", key)
 		return
 	}
-	handler.PreHandler(channel, message.Msg())
-	handler.Handler(channel, message.Msg())
-	handler.PostHandler(channel, message.Msg())
+	handler.PreHandler(channel, message)
+	handler.Handler(channel, message)
+	handler.PostHandler(channel, message)
 }
 
 func (m *HandlerManager) addHandler(key interface{}, handler tiface.IHandler) {

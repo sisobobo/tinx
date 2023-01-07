@@ -16,6 +16,11 @@ type Channel struct {
 	writer *bufio.Writer // writer
 }
 
+func (c *Channel) WriteAndFlush(data []byte) {
+	c.writer.Write(data)
+	c.writer.Flush()
+}
+
 func (c *Channel) Id() uint32 {
 	return c.id
 }
@@ -29,9 +34,12 @@ func (c *Channel) LocalAddr() net.Addr {
 }
 
 func NewChannel(server *Server, conn *net.TCPConn) tiface.IChannel {
+	maxFrameLength := int(server.pack.GetMaxFrameLength())
 	c := &Channel{
 		server: server,
 		conn:   conn,
+		reader: bufio.NewReaderSize(conn, maxFrameLength),
+		writer: bufio.NewWriterSize(conn, maxFrameLength),
 	}
 	return c
 }
@@ -47,7 +55,6 @@ func (c *Channel) close() {
 }
 
 func (c *Channel) startReader() {
-	c.reader = bufio.NewReaderSize(c.conn, int(c.server.pack.GetMaxFrameLength()))
 	defer c.close()
 	for {
 		data, err := c.server.pack.UnPack(c.reader)
@@ -58,12 +65,12 @@ func (c *Channel) startReader() {
 			continue
 		}
 		if len(data) > 0 {
-			msg, err := c.server.pack.Decode(data)
+			key, msg, err := c.server.pack.Decode(data)
 			if err != nil {
 				continue
 			}
 			if msg != nil {
-				go c.server.handlerManager.doMsgHandler(c, msg)
+				go c.server.handlerManager.doMsgHandler(c, key, msg)
 			}
 		}
 	}

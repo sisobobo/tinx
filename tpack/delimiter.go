@@ -19,6 +19,11 @@ func (d *Delimiter) GetMaxFrameLength() uint32 {
 	return d.maxFrameLen
 }
 
+func (d *Delimiter) Pack(writer *bufio.Writer) error {
+	writer.WriteByte(d.delim)
+	return nil
+}
+
 func (d *Delimiter) UnPack(reader *bufio.Reader) ([]byte, error) {
 	line, err := reader.ReadSlice(d.delim)
 	if err == bufio.ErrBufferFull {
@@ -36,8 +41,12 @@ func (d *Delimiter) UnPack(reader *bufio.Reader) ([]byte, error) {
 	return line, nil
 }
 
-func (d *Delimiter) Decode(data []byte) (tiface.IMessage, error) {
-	panic("please override func UnPack(data []byte) (tiface.IMessage, error)")
+func (d *Delimiter) Decode(data []byte) (tiface.HandlerKey, tiface.Message, error) {
+	panic("please override func (d *Delimiter) Decode(data []byte) (tiface.HandlerKey, tiface.Message, error) ")
+}
+
+func (d *Delimiter) Encode(message tiface.Message) ([]byte, error) {
+	panic("please override func (d *Delimiter) Encode(message tiface.Message) ([]byte, error) ")
 }
 
 func NewDelimiter(delim byte, maxFrameLen uint32, stripDelimiter bool) tiface.IPack {
