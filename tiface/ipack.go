@@ -12,5 +12,5 @@ type IPack interface {
 	Pack(writer *bufio.Writer) error
 	UnPack(reader *bufio.Reader) ([]byte, error)
 	Decode(data []byte) (HandlerKey, Message, error)
-	Encode(message Message) ([]byte, error)
+	Encode(message Message, writer *bufio.Writer) error
 }

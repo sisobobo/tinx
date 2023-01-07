@@ -17,12 +17,11 @@ type Channel struct {
 }
 
 func (c *Channel) WriteAndFlush(message tiface.Message) {
-	data, err := c.server.pack.Encode(message)
+	err := c.server.pack.Encode(message, c.writer)
 	if err != nil {
 		tlog.Error("encode error : %s ", err)
 		return
 	}
-	c.writer.Write(data)
 	c.server.pack.Pack(c.writer)
 	c.writer.Flush()
 }
@@ -76,7 +75,7 @@ func (c *Channel) startReader() {
 			if err != nil {
 				continue
 			}
-			if msg != nil {
+			if key != nil {
 				go c.server.handlerManager.doMsgHandler(c, key, msg)
 			}
 		}
