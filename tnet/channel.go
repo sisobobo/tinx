@@ -17,7 +17,7 @@ type Channel struct {
 }
 
 func (c *Channel) WriteAndFlush(message tiface.Message) {
-	err := c.server.pack.Encode(message, c.writer)
+	err := c.server.pack.Encode(message)
 	if err != nil {
 		tlog.Error("encode error : %s ", err)
 		return
