@@ -1,87 +1,85 @@
 package tnet
 
 import (
-	"bufio"
+	"context"
 	"github.com/sisobobo/tinx/tiface"
-	"github.com/sisobobo/tinx/tlog"
+	"github.com/sisobobo/tinx/tpkg/bufio"
+	"github.com/sisobobo/tinx/tpkg/bytes"
 	"io"
 	"net"
 )
 
 type Channel struct {
-	id     uint32        //Id
-	server *Server       //server
-	conn   *net.TCPConn  //conn
-	reader *bufio.Reader // reader
-	writer *bufio.Writer // writer
+	id     uint32
+	server *Server
+	conn   net.Conn
+	writer bufio.Writer
+	reader bufio.Reader
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
-func (c *Channel) WriteAndFlush(message tiface.Message) {
-	err := c.server.pack.Encode(message)
+func (c *Channel) WriteAndFlush(msg interface{}) {
+	data, err := c.server.codec.Encode(msg)
 	if err != nil {
-		tlog.Error("encode error : %s ", err)
 		return
 	}
-	c.server.pack.Pack(c.writer)
+	c.writer.Write(data)
 	c.writer.Flush()
 }
 
-func (c *Channel) Id() uint32 {
-	return c.id
+func (c *Channel) Close() {
+	c.cancel()
 }
 
-func (c *Channel) RemoteAddr() net.Addr {
-	return c.conn.RemoteAddr()
+func (c *Channel) Context() context.Context {
+	return c.ctx
 }
 
-func (c *Channel) LocalAddr() net.Addr {
-	return c.conn.RemoteAddr()
+func (c *Channel) LocalAddr() string {
+	return c.conn.LocalAddr().String()
 }
 
-func NewChannel(server *Server, conn *net.TCPConn) tiface.IChannel {
-	maxFrameLength := int(server.pack.GetMaxFrameLength())
+func (c *Channel) RemoteAddr() string {
+	return c.conn.RemoteAddr().String()
+}
+
+func newChannel(server *Server, conn net.Conn, rb, wb *bytes.Buffer) tiface.Channel {
 	c := &Channel{
 		server: server,
 		conn:   conn,
-		reader: bufio.NewReaderSize(conn, maxFrameLength),
-		writer: bufio.NewWriterSize(conn, maxFrameLength),
 	}
+	c.writer.ResetBuffer(conn, wb.Bytes())
+	c.reader.ResetBuffer(conn, rb.Bytes())
 	return c
 }
 
 func (c *Channel) open() {
-	tlog.INFO("连接：%s", c.conn.RemoteAddr().String())
-	go c.startReader()
-	go c.startWriter()
-}
-
-func (c *Channel) close() {
-	tlog.INFO("连接断开")
-	c.conn.Close()
-}
-
-func (c *Channel) startReader() {
-	defer c.close()
-	for {
-		data, err := c.server.pack.UnPack(c.reader)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			continue
-		}
-		if len(data) > 0 {
-			key, msg, err := c.server.pack.Decode(data)
-			if err != nil {
-				continue
-			}
-			if key != nil {
-				go c.server.handlerManager.doMsgHandler(c, key, msg)
-			}
-		}
+	c.ctx, c.cancel = context.WithCancel(context.Background())
+	c.server.handler.Active(c)
+	go c.read()
+	select {
+	case <-c.ctx.Done():
+		c.close()
+		return
 	}
 }
 
-func (c *Channel) startWriter() {
-	//c.server.pack.Encode()
+func (c *Channel) read() {
+	defer c.close()
+	for {
+		data, err := c.server.codec.Decode(&c.reader)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			continue
+		}
+		c.server.handler.Read(c, data)
+	}
+}
+
+func (c *Channel) close() {
+	c.server.handler.InActive(c)
+	c.conn.Close()
 }

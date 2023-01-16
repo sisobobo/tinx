@@ -3,82 +3,80 @@ package tnet
 import (
 	"fmt"
 	"github.com/sisobobo/tinx/tiface"
-	"github.com/sisobobo/tinx/tlog"
+	"math"
 	"net"
 )
 
 type Server struct {
-	Name           string
-	Host           string
-	Port           int
-	pack           tiface.IPack
-	handlerManager *HandlerManager
-}
-
-func (s *Server) AddMsgHandlers(handlers ...tiface.IHandler) {
-	for _, handler := range handlers {
-		s.handlerManager.addHandler(handler.Id(), handler)
-	}
-}
-
-func (s *Server) preStart() {
-	if s.pack == nil {
-		panic("pack is nil , please check SetPack()")
-	}
-}
-
-func (s *Server) initTcp() (listener *net.TCPListener, err error) {
-	var (
-		address = fmt.Sprintf("%s:%d", s.Host, s.Port)
-		addr    *net.TCPAddr
-	)
-	if addr, err = net.ResolveTCPAddr("tcp", address); err != nil {
-		return
-	}
-	if listener, err = net.ListenTCP("tcp", addr); err != nil {
-		return
-	}
-	tlog.INFO("start up listen:%s", address)
-	return
-}
-
-func (s *Server) Start() {
-	s.preStart()
-	lis, err := s.initTcp()
-	if err != nil {
-		tlog.Error("server start error : %s", err)
-		return
-	}
-	go s.acceptTcp(lis)
-	select {}
-}
-
-func (s *Server) acceptTcp(listener *net.TCPListener) {
-	for {
-		conn, err := listener.AcceptTCP()
-		if err != nil {
-			tlog.Error("listener.Accept(\"%s\") error(%v)", listener.Addr().String(), err)
-			return
-		}
-		channel := NewChannel(s, conn).(*Channel)
-		channel.open()
-	}
+	id         string
+	Ip         string
+	port       uint16
+	NetWorking string
+	round      *Round
+	codec      tiface.Codec
+	handler    tiface.Handler
 }
 
 func (s *Server) Stop() {
-	//TODO implement me
-	panic("implement me")
+
 }
 
-func (s *Server) SetPack(pack tiface.IPack) {
-	s.pack = pack
+func NewServer(id string, port uint16, options ...Option) tiface.Server {
+	s := &Server{
+		id:         id,
+		port:       port,
+		NetWorking: "tcp",
+		round:      newRound(),
+	}
+	s.setOptions(options...)
+	return s
 }
 
-func NewServer(name string, port int) tiface.IServer {
-	return &Server{
-		Name:           name,
-		Host:           "0.0.0.0",
-		Port:           port,
-		handlerManager: newHandlerManager(),
+func (s *Server) Start() {
+	lis := s.listener()
+	go connect(s, lis)
+}
+
+func (s *Server) Serve() {
+	if s.handler == nil {
+		panic("handler not allow nil")
+	}
+	if s.codec == nil {
+		panic("codec not allow nil")
+	}
+	s.Start()
+	select {}
+}
+
+func connect(s *Server, lis net.Listener) {
+	n := 0
+	for {
+		conn, err := lis.Accept()
+		if err != nil {
+			conn.Close()
+			return
+		}
+		rp := s.round.Reader(n)
+		wp := s.round.Writer(n)
+		ch := newChannel(s, conn, rp.Get(), wp.Get()).(*Channel)
+		ch.open()
+		if n++; n == math.MaxInt32 {
+			n = 0
+		}
+	}
+}
+
+func (s *Server) listener() net.Listener {
+	address := fmt.Sprintf("%s:%d", s.Ip, s.port)
+	listen, err := net.Listen(s.NetWorking, address)
+	if err != nil {
+		panic(err)
+	}
+	return listen
+}
+
+func (s *Server) setOptions(options ...Option) {
+	for i := 0; i < len(options); i++ {
+		options[i](s)
 	}
 }
