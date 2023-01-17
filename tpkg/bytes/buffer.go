@@ -4,15 +4,18 @@ import (
 	"sync"
 )
 
+// Buffer buffer.
 type Buffer struct {
 	buf  []byte
-	next *Buffer
+	next *Buffer // next free buffer
 }
 
+// Bytes .
 func (b *Buffer) Bytes() []byte {
 	return b.buf
 }
 
+// Pool is a buffer pool.
 type Pool struct {
 	lock sync.Mutex
 	free *Buffer
@@ -21,16 +24,19 @@ type Pool struct {
 	size int
 }
 
+// NewPool new a memory buffer pool struct.
 func NewPool(num, size int) (p *Pool) {
 	p = new(Pool)
 	p.init(num, size)
 	return
 }
 
+// Init  the memory buffer.
 func (p *Pool) Init(num, size int) {
 	p.init(num, size)
 }
 
+// init  the memory buffer.
 func (p *Pool) init(num, size int) {
 	p.num = num
 	p.size = size
@@ -38,6 +44,7 @@ func (p *Pool) init(num, size int) {
 	p.grow()
 }
 
+// grow  the memory buffer size, and update free pointer.
 func (p *Pool) grow() {
 	var (
 		i   int
@@ -58,6 +65,7 @@ func (p *Pool) grow() {
 	b.next = nil
 }
 
+// Get  a free memory buffer.
 func (p *Pool) Get() (b *Buffer) {
 	p.lock.Lock()
 	if b = p.free; b == nil {
@@ -69,6 +77,7 @@ func (p *Pool) Get() (b *Buffer) {
 	return
 }
 
+// Put  back a memory buffer to free.
 func (p *Pool) Put(b *Buffer) {
 	p.lock.Lock()
 	b.next = p.free
