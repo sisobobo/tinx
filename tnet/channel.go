@@ -1,7 +1,7 @@
 package tnet
 
 import (
-	"fmt"
+	"context"
 	"github.com/google/uuid"
 	"github.com/sisobobo/tinx/tlog"
 	"github.com/sisobobo/tinx/tpkg/bufio"
@@ -9,9 +9,11 @@ import (
 	"io"
 	"net"
 	"strings"
+	"sync"
 )
 
 type Channel struct {
+	sync.RWMutex
 	id     string
 	server *Server
 	conn   net.Conn
@@ -20,20 +22,43 @@ type Channel struct {
 	reader bufio.Reader
 	writer bufio.Writer
 	bucket *Bucket
+	ctx    context.Context
+	cancel context.CancelFunc
 	r      int
+}
+
+func (c *Channel) Id() string {
+	return c.id
 }
 
 func (c *Channel) RemoteAddr() string {
 	return c.conn.RemoteAddr().String()
 }
 
-func (c *Channel) Id() string {
-	return c.id
+func (c *Channel) LocalAddr() string {
+	return c.conn.LocalAddr().String()
+}
 
+func (c *Channel) SendMessage(message Message) {
+	c.RLock()
+	defer c.RUnlock()
+	data, err := c.server.codec.Encode(message)
+	if err != nil {
+		tlog.Errorf("encode error :", err)
+		return
+	}
+	if _, err = c.writer.Write(data); err != nil {
+		tlog.Errorf("write error :", err)
+		return
+	}
+	if err = c.writer.Flush(); err != nil {
+		tlog.Errorf("flush error :", err)
+		return
+	}
 }
 
 func (c *Channel) Close() {
-	c.close()
+	c.cancel()
 }
 
 func NewChannel(server *Server, conn *net.TCPConn, r int) *Channel {
@@ -50,31 +75,43 @@ func NewChannel(server *Server, conn *net.TCPConn, r int) *Channel {
 	c.reader.ResetBuffer(c.conn, c.rb.Bytes())
 	c.writer.ResetBuffer(c.conn, c.wb.Bytes())
 	c.bucket.Put(c)
-	fmt.Printf("r:%d  %p : %d \n", r, c.bucket, c.bucket.ChannelCount())
 	return c
 }
 
 func (c *Channel) open() {
+	c.ctx, c.cancel = context.WithCancel(context.Background())
 	c.server.handler.Connect(c)
 	go c.startReader()
+	select {
+	case <-c.ctx.Done():
+		c.close()
+		return
+	}
 }
 
 func (c *Channel) startReader() {
-	defer c.close()
+	defer c.Close()
 	for {
-		msg, err := c.server.codec.Decode(&c.reader)
-		if err == io.EOF {
-			break
+		select {
+		case <-c.ctx.Done():
+			return
+		default:
+			msg, err := c.server.codec.Decode(&c.reader)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				tlog.Errorf("decode error  :", err)
+				return
+			}
+			go c.server.handler.Receive(c, msg)
 		}
-		if err != nil {
-			tlog.Errorf("%s接收到的据异常%s", c.RemoteAddr(), err)
-			continue
-		}
-		go c.server.handler.Receive(c, msg)
 	}
 }
 
 func (c *Channel) close() {
+	c.Lock()
+	defer c.Unlock()
 	c.bucket.Remove(c)
 	c.rp.Put(c.rb)
 	c.wp.Put(c.wb)

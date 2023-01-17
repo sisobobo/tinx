@@ -2,7 +2,9 @@ package tnet
 
 import "github.com/sisobobo/tinx/tpkg/bufio"
 
-type Message interface{}
+type Message interface {
+	RouterId() any
+}
 
 type Codec interface {
 	Decode(*bufio.Reader) (Message, error)

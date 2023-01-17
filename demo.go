@@ -11,14 +11,14 @@ type TestMsg struct {
 	msg string
 }
 
+func (t *TestMsg) RouterId() any {
+	return nil
+}
+
 func NewTestMsg(s string) *TestMsg {
 	m := new(TestMsg)
 	m.msg = s
 	return m
-}
-
-func (m *TestMsg) String() string {
-	return m.msg
 }
 
 type TestCodec struct {
@@ -30,11 +30,12 @@ func (t *TestCodec) Decode(reader *bufio.Reader) (tnet.Message, error) {
 		return nil, err
 	}
 	s := string(line[:len(line)-2])
-	return s, err
+	msg := NewTestMsg(s)
+	return msg, err
 }
 
-func (t *TestCodec) Encode() {
-
+func (t *TestCodec) Encode(message tnet.Message) ([]byte, error) {
+	return nil, nil
 }
 
 type TestHandler struct {
@@ -52,10 +53,19 @@ func (t TestHandler) DisConnect(channel *tnet.Channel) {
 	fmt.Println(channel.RemoteAddr(), "断开连接")
 }
 
+func aa() {
+	fmt.Println("11")
+	return
+}
+
+func bb() {
+	fmt.Println("22")
+}
+
 func main() {
-	server := tnet.NewServer("",
-		tnet.SetCodec(&TestCodec{}),
-		tnet.SetHandler(TestHandler{}),
-	)
-	server.Serve()
+	//server := tnet.NewServer("",
+	//	tnet.SetCodec(&TestCodec{}),
+	//	tnet.SetHandler(TestHandler{}),
+	//)
+	//server.Serve()
 }
