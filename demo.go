@@ -46,7 +46,11 @@ func (t TestHandler) Connect(channel *tnet.Channel) {
 }
 
 func (t TestHandler) Receive(channel *tnet.Channel, message tnet.Message) {
-	fmt.Println(channel.RemoteAddr(), ":", message)
+	msg := message.(*TestMsg).msg
+	fmt.Println("msg:", msg)
+	if msg == "close" {
+		channel.Close()
+	}
 }
 
 func (t TestHandler) DisConnect(channel *tnet.Channel) {
@@ -63,9 +67,9 @@ func bb() {
 }
 
 func main() {
-	//server := tnet.NewServer("",
-	//	tnet.SetCodec(&TestCodec{}),
-	//	tnet.SetHandler(TestHandler{}),
-	//)
-	//server.Serve()
+	server := tnet.NewServer("",
+		tnet.SetCodec(&TestCodec{}),
+		tnet.SetHandler(TestHandler{}),
+	)
+	server.Serve()
 }
