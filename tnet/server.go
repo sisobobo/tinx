@@ -75,8 +75,10 @@ func (s *Server) Stop() {
 
 }
 
-func (s *Server) AddHandler(id interface{}, r Router) {
-	s.rm.add(id, r)
+func (s *Server) AddRouters(routers ...Router) {
+	for _, v := range routers {
+		s.rm.add(v.ID(), v)
+	}
 }
 
 func NewServer(configPath string, options ...Option) *Server {

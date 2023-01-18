@@ -5,7 +5,10 @@ import (
 	"github.com/sisobobo/tinx/tlog"
 )
 
+type RouterId interface{}
+
 type Router interface {
+	ID() RouterId
 	Handler(channel *Channel, msg Message)
 }
 
@@ -34,6 +37,6 @@ func (rm *RouterManager) doHandler(channel *Channel, msg Message) {
 			tlog.Warnf("routerId %v not find router", msg.RouterId())
 			return
 		}
-		router.Handler(channel, msg)
+		go router.Handler(channel, msg)
 	}
 }
