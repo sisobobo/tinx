@@ -3,7 +3,7 @@ package tnet
 import "github.com/sisobobo/tinx/tpkg/bufio"
 
 type Message interface {
-	RouterId() any
+	RouterId() interface{}
 }
 
 type Codec interface {

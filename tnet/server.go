@@ -11,7 +11,8 @@ type Server struct {
 	conf      *tconf.Config
 	serverID  string
 	codec     Codec
-	handler   Handler
+	handler   *RouterHandler
+	rm        *RouterManager
 	round     *Round
 	bucketIdx uint32
 }
@@ -74,6 +75,10 @@ func (s *Server) Stop() {
 
 }
 
+func (s *Server) AddHandler(id interface{}, r Router) {
+	s.rm.add(id, r)
+}
+
 func NewServer(configPath string, options ...Option) *Server {
 	conf, err := tconf.NewConfig(configPath)
 	if err != nil {
@@ -82,6 +87,7 @@ func NewServer(configPath string, options ...Option) *Server {
 	s := &Server{
 		conf:  conf,
 		round: NewRound(conf),
+		rm:    NewRouterManager(),
 	}
 	s.setOptions(options...)
 	return s

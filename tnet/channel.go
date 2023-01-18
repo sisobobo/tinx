@@ -92,7 +92,7 @@ func (c *Channel) open() {
 			tlog.Errorf("decode error : %s", err)
 			return
 		}
-		c.server.handler.Receive(c, msg)
+		c.server.handler.router(c.server.rm, c, msg)
 	}
 }
 

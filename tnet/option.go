@@ -10,6 +10,6 @@ func SetCodec(codec Codec) Option {
 
 func SetHandler(handler Handler) Option {
 	return func(s *Server) {
-		s.handler = handler
+		s.handler = NewRouterHandler(handler)
 	}
 }

@@ -57,19 +57,10 @@ func (t TestHandler) DisConnect(channel *tnet.Channel) {
 	fmt.Println(channel.RemoteAddr(), "断开连接")
 }
 
-func aa() {
-	fmt.Println("11")
-	return
-}
-
-func bb() {
-	fmt.Println("22")
-}
-
 func main() {
 	server := tnet.NewServer("",
 		tnet.SetCodec(&TestCodec{}),
-		tnet.SetHandler(TestHandler{}),
+		tnet.SetHandler(&TestHandler{}),
 	)
 	server.Serve()
 }
