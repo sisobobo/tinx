@@ -5,6 +5,7 @@ import (
 	"github.com/sisobobo/tinx/tlog"
 	"math"
 	"net"
+	"runtime"
 )
 
 type Server struct {
@@ -31,7 +32,7 @@ func (s *Server) Start() {
 			panic(err)
 		}
 		tlog.Infof("start tcp listen: %s", bind)
-		for i := 0; i < 1; i++ {
+		for i := 0; i < runtime.NumCPU(); i++ {
 			go s.acceptTcp(listener)
 		}
 	}

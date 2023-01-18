@@ -11,7 +11,7 @@ type TestMsg struct {
 	msg string
 }
 
-func (t *TestMsg) RouterId() any {
+func (t *TestMsg) RouterId() tnet.RouterId {
 	return nil
 }
 
