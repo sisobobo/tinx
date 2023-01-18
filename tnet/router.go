@@ -5,6 +5,10 @@ import (
 	"github.com/sisobobo/tinx/tlog"
 )
 
+type Router interface {
+	Handler(channel *Channel, msg Message)
+}
+
 type RouterManager struct {
 	routers map[interface{}]Router
 }
@@ -21,10 +25,6 @@ func (rm *RouterManager) add(id interface{}, r Router) {
 		panic(fmt.Sprintf("routerId %v is already a route", id))
 	}
 	rm.routers[id] = r
-}
-
-type Router interface {
-	Handler(channel *Channel, msg Message)
 }
 
 func (rm *RouterManager) doHandler(channel *Channel, msg Message) {
