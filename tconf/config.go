@@ -1,6 +1,8 @@
 package tconf
 
-import "github.com/BurntSushi/toml"
+import (
+	"github.com/BurntSushi/toml"
+)
 
 type Config struct {
 	Debug  bool
@@ -29,14 +31,10 @@ type Bucket struct {
 	RoutineSize   int
 }
 
-func init() {
-
-}
-
 func NewConfig(confPath string) (conf *Config, err error) {
 	conf = Default()
 	if len(confPath) > 0 {
-		_, err = toml.Decode(confPath, &conf)
+		_, err = toml.DecodeFile(confPath, &conf)
 	}
 	return conf, err
 }
@@ -57,7 +55,7 @@ func Default() *Config {
 			WriteBufSize: 8192,
 		},
 		Bucket: &Bucket{
-			Size:          1,
+			Size:          32,
 			Channel:       1024,
 			Room:          1024,
 			RoutineAmount: 32,
