@@ -5,43 +5,30 @@ import (
 	"github.com/sisobobo/tinx/tpkg/bytes"
 )
 
-type Round struct {
+type round struct {
 	readers []bytes.Pool
 	writers []bytes.Pool
-	buckets []*Bucket
-	conf    *tconf.Config
 }
 
-func NewRound(c *tconf.Config) (r *Round) {
-	r = &Round{
-		conf: c,
-	}
-	// reader
-	r.readers = make([]bytes.Pool, c.TCP.Reader)
-	for i := 0; i < c.TCP.Reader; i++ {
-		r.readers[i].Init(c.TCP.ReadBuf, c.TCP.ReadBufSize)
+func newRound(c *tconf.Config) (r *round) {
+	var i int
+	r = &round{}
+	r.readers = make([]bytes.Pool, c.Server.Reader)
+	for i = 0; i < c.Server.Reader; i++ {
+		r.readers[i].Init(c.Server.ReadBuf, c.Server.ReadBufSize)
 	}
 	// writer
-	r.writers = make([]bytes.Pool, c.TCP.Writer)
-	for i := 0; i < c.TCP.Writer; i++ {
-		r.writers[i].Init(c.TCP.WriteBuf, c.TCP.WriteBufSize)
-	}
-	//buckets
-	r.buckets = make([]*Bucket, c.Bucket.Size)
-	for i := 0; i < c.Bucket.Size; i++ {
-		r.buckets[i] = NewBucket(c.Bucket)
+	r.writers = make([]bytes.Pool, c.Server.Writer)
+	for i = 0; i < c.Server.Writer; i++ {
+		r.writers[i].Init(c.Server.WriteBuf, c.Server.WriteBufSize)
 	}
 	return
 }
 
-func (r *Round) Reader(rn int) *bytes.Pool {
-	return &(r.readers[rn%r.conf.TCP.Reader])
+func (r *round) reader(rn int) *bytes.Pool {
+	return &(r.readers[rn%len(r.readers)])
 }
 
-func (r *Round) Writer(rn int) *bytes.Pool {
-	return &(r.writers[rn%r.conf.TCP.Writer])
-}
-
-func (r *Round) Bucket(rn int) *Bucket {
-	return r.buckets[rn%r.conf.Bucket.Size]
+func (r *round) writer(rn int) *bytes.Pool {
+	return &(r.writers[rn%len(r.writers)])
 }

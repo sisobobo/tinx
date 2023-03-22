@@ -1,42 +1,49 @@
 package tnet
 
 import (
-	"fmt"
+	"github.com/sisobobo/tinx/tiface"
 	"github.com/sisobobo/tinx/tlog"
+	"strconv"
 )
 
-type RouterId interface{}
-
-type Router interface {
-	ID() RouterId
-	Handler(channel *Channel, msg Message)
+type routerManager struct {
+	routers map[uint32]tiface.IRouter
 }
 
-type RouterManager struct {
-	routers map[interface{}]Router
-}
-
-func NewRouterManager() *RouterManager {
-	return &RouterManager{
-		routers: make(map[interface{}]Router),
+func newRouterManager() *routerManager {
+	return &routerManager{
+		routers: make(map[uint32]tiface.IRouter),
 	}
 }
 
-func (rm *RouterManager) add(id interface{}, r Router) {
-	router := rm.routers[id]
-	if router != nil {
-		panic(fmt.Sprintf("routerId %v is already a route", id))
+func (rm *routerManager) addRouter(msgId uint32, router tiface.IRouter) {
+	if _, ok := rm.routers[msgId]; ok {
+		panic("repeated router msgId:" + strconv.Itoa(int(msgId)))
 	}
-	rm.routers[id] = r
+	rm.routers[msgId] = router
 }
 
-func (rm *RouterManager) doHandler(channel *Channel, msg Message) {
-	if msg.RouterId() != nil {
-		router := rm.routers[msg.RouterId()]
-		if router == nil {
-			tlog.Warnf("routerId %v not find router", msg.RouterId())
-			return
-		}
-		go router.Handler(channel, msg)
+func (rm *routerManager) route(channel tiface.IChannel, msg tiface.IMessage) {
+	router, ok := rm.routers[msg.GetMsgId()]
+	if !ok {
+		tlog.Warnf("router msgID = %s is not found", msg.GetMsgId())
+		return
 	}
+	router.PreHandle(channel, msg)
+	router.Handle(channel, msg)
+	router.PostHandle(channel, msg)
+}
+
+type BaseRouter struct {
+}
+
+func (b *BaseRouter) PreHandle(channel tiface.IChannel, msg tiface.IMessage) {
+
+}
+
+func (b *BaseRouter) Handle(channel tiface.IChannel, msg tiface.IMessage) {
+
+}
+
+func (b *BaseRouter) PostHandle(channel tiface.IChannel, msg tiface.IMessage) {
 }

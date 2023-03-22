@@ -24,7 +24,7 @@ type Pool struct {
 	size int
 }
 
-// NewPool new a memory buffer pool struct.
+// NewPool  a memory buffer pool struct.
 func NewPool(num, size int) (p *Pool) {
 	p = new(Pool)
 	p.init(num, size)

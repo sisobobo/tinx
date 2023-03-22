@@ -1,15 +1,27 @@
 package tlog
 
-import "log"
+import "github.com/golang/glog"
 
-func Infof(format string, msg ...any) {
-	log.Printf(format, msg...)
+func Info(args ...any) {
+	glog.V(3).Info(args...)
 }
 
-func Warnf(format string, msg ...any) {
-	log.Printf(format, msg...)
+func Infof(format string, args ...any) {
+	glog.V(3).Infof(format, args...)
 }
 
-func Errorf(format string, msg ...any) {
-	log.Printf(format, msg...)
+func Warn(args ...any) {
+	glog.V(2).Info(args...)
+}
+
+func Warnf(format string, args ...any) {
+	glog.V(2).Infof(format, args...)
+}
+
+func Error(args ...any) {
+	glog.V(1).Info(args...)
+}
+
+func Errorf(format string, args ...any) {
+	glog.V(1).Infof(format, args...)
 }

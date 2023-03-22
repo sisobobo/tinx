@@ -5,47 +5,35 @@ import (
 	"sync"
 )
 
-type Bucket struct {
-	conf  *tconf.Bucket
+type bucket struct {
+	c     *tconf.Bucket
 	cLock sync.RWMutex
-	chs   map[string]*Channel
+	chs   map[string]*channel
 }
 
-func (b *Bucket) ChannelCount() int {
-	return len(b.chs)
+func newBucket(c *tconf.Bucket) *bucket {
+	return &bucket{
+		c:   c,
+		chs: make(map[string]*channel, c.Channel),
+	}
 }
 
-func (b *Bucket) Channel(key string) (ch *Channel) {
-	b.cLock.RLock()
-	defer b.cLock.RUnlock()
-	ch = b.chs[key]
-	return
-}
-
-func (b *Bucket) Put(ch *Channel) (err error) {
+func (b *bucket) putChannel(ch *channel) {
 	b.cLock.Lock()
 	defer b.cLock.Unlock()
 	if dch := b.chs[ch.id]; dch != nil {
 		dch.Close()
 	}
 	b.chs[ch.id] = ch
-	return
 }
 
-func (b *Bucket) Remove(ch *Channel) {
+func (b *bucket) delChannel(dch *channel) {
 	b.cLock.Lock()
 	defer b.cLock.Unlock()
-	if v, ok := b.chs[ch.id]; ok {
-		if v == ch {
+	if ch, ok := b.chs[dch.id]; ok {
+		if ch == dch {
 			delete(b.chs, ch.id)
 		}
+		b.chs[ch.id] = ch
 	}
-}
-
-func NewBucket(c *tconf.Bucket) *Bucket {
-	b := &Bucket{
-		conf: c,
-		chs:  make(map[string]*Channel, c.Channel),
-	}
-	return b
 }
