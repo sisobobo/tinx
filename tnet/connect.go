@@ -32,7 +32,7 @@ func (d *defaultConnect) Read(channel tiface.IChannel, reader *bufio.Reader) (ti
 		tlog.Errorf("read err : %s", err)
 		return nil, err
 	}
-	l := d.ByteOrder().Uint16(header[:2]) & 8192
+	l := d.ByteOrder().Uint16(header[:2])
 	msgId := d.ByteOrder().Uint32(header[2:])
 	data, err := reader.Pop(int(l))
 	if err != nil {

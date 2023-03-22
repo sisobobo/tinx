@@ -1,10 +1,10 @@
 package tnet
 
 import (
+	"github.com/sisobobo/tinx/tconf"
+	"github.com/sisobobo/tinx/tiface"
+	"github.com/sisobobo/tinx/tpkg/bufio"
 	"testing"
-	"tinx/tconf"
-	"tinx/tiface"
-	"tinx/tpkg/bufio"
 )
 
 type MyConnect struct {

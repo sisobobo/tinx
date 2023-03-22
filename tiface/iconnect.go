@@ -2,7 +2,7 @@ package tiface
 
 import (
 	"encoding/binary"
-	"tinx/tpkg/bufio"
+	"github.com/sisobobo/tinx/tpkg/bufio"
 )
 
 type IConnect interface {
