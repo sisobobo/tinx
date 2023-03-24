@@ -16,6 +16,7 @@ type server struct {
 	serverId      string
 	pack          tiface.IPack
 	routerManager *routerManager
+	exitChan      chan bool
 }
 
 func (s *server) SetPack(pack tiface.IPack) {
@@ -33,16 +34,26 @@ func (s *server) Start() {
 	if len(s.routerManager.routers) == 0 {
 		panic("routers is nil , please add router")
 	}
-	err := s.initServer(s.conf.Server.Bind, 1)
+	lis, err := s.initServer(s.conf.Server.Bind, 1)
 	if err != nil {
 		panic(err)
 	}
-	select {}
+	select {
+	case <-s.exitChan:
+		for _, v := range lis {
+			err := v.Close()
+			if err != nil {
+				tlog.Errorf("Listener close err :%v", err)
+			}
+			tlog.Infof("listener %s closed", v.Addr().String())
+		}
+	}
 }
 
 func (s *server) Stop() {
-	//TODO implement me
-	panic("implement me")
+	tlog.Infof("server closed")
+	s.exitChan <- true
+	close(s.exitChan)
 }
 
 func NewServer(c *tconf.Config) tiface.IServer {
@@ -51,6 +62,7 @@ func NewServer(c *tconf.Config) tiface.IServer {
 		round:         newRound(c),
 		buckets:       make([]*bucket, c.Bucket.Size),
 		routerManager: newRouterManager(),
+		exitChan:      make(chan bool),
 	}
 	for i := 0; i < c.Bucket.Size; i++ {
 		s.buckets[i] = newBucket(c.Bucket)
@@ -59,13 +71,15 @@ func NewServer(c *tconf.Config) tiface.IServer {
 	return s
 }
 
-func (s *server) initServer(addrs []string, accept int) (err error) {
+func (s *server) initServer(addrs []string, accept int) (lis []*net.TCPListener, err error) {
 	var (
 		bind     string
 		listener *net.TCPListener
 		addr     *net.TCPAddr
 	)
-	for _, bind = range addrs {
+	lis = make([]*net.TCPListener, len(addrs))
+	for i := 0; i < len(addrs); i++ {
+		bind = addrs[i]
 		if addr, err = net.ResolveTCPAddr("tcp", bind); err != nil {
 			tlog.Errorf("net.ResolveTCPAddr(tcp, %s) error(%v)", bind, err)
 			return
@@ -79,6 +93,7 @@ func (s *server) initServer(addrs []string, accept int) (err error) {
 		for i := 0; i < accept; i++ {
 			go acceptTCP(s, listener)
 		}
+		lis[i] = listener
 	}
 	return
 }
@@ -91,7 +106,6 @@ func acceptTCP(s *server, lis *net.TCPListener) {
 	)
 	for {
 		if conn, err = lis.AcceptTCP(); err != nil {
-			// if listener close then return
 			tlog.Errorf("listener.Accept(\"%s\") error(%v)", lis.Addr().String(), err)
 			return
 		}

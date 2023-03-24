@@ -9,12 +9,17 @@ import (
 
 type TRouter struct {
 	BaseRouter
+	server tiface.IServer
 }
 
-func (T TRouter) Handle(channel tiface.IChannel, msg tiface.IMessage) {
-	fmt.Println(string(msg.GetData()))
+func (r *TRouter) Handle(channel tiface.IChannel, msg tiface.IMessage) {
+	s := string(msg.GetData())
+	if s == "close" {
+		r.server.Stop()
+		return
+	}
 	msg.SetMsgId(2)
-	err := channel.Write(msg)
+	err := channel.WriteAndFlush(msg)
 	if err != nil {
 		fmt.Println("write err :", err)
 	}
@@ -41,6 +46,8 @@ func TestTcp(t *testing.T) {
 		},
 	}
 	s := NewServer(conf)
-	s.AddRouter(1, &TRouter{})
+	s.AddRouter(1, &TRouter{
+		server: s,
+	})
 	s.Start()
 }
