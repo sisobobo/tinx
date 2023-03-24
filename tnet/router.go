@@ -26,7 +26,7 @@ func (rm *routerManager) addRouter(msgId uint32, router tiface.IRouter) {
 func (rm *routerManager) route(channel tiface.IChannel, msg tiface.IMessage) {
 	router, ok := rm.routers[msg.GetMsgId()]
 	if !ok {
-		tlog.Warnf("router msgID = %s is not found", msg.GetMsgId())
+		tlog.Warnf("router msgID = %d is not found", msg.GetMsgId())
 		return
 	}
 	router.PreHandle(channel, msg)

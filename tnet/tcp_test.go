@@ -1,29 +1,23 @@
 package tnet
 
 import (
+	"fmt"
 	"github.com/sisobobo/tinx/tconf"
 	"github.com/sisobobo/tinx/tiface"
-	"github.com/sisobobo/tinx/tpkg/bufio"
 	"testing"
 )
-
-type MyConnect struct {
-	BaseConnect
-}
-
-func (m *MyConnect) Read(channel tiface.IChannel, reader *bufio.Reader) ([]byte, error) {
-	pop, err := reader.ReadSlice('\n')
-	if err != nil {
-		return nil, err
-	}
-	return pop[:len(pop)-2], nil
-}
 
 type TRouter struct {
 	BaseRouter
 }
 
 func (T TRouter) Handle(channel tiface.IChannel, msg tiface.IMessage) {
+	fmt.Println(string(msg.GetData()))
+	msg.SetMsgId(2)
+	err := channel.Write(msg)
+	if err != nil {
+		fmt.Println("write err :", err)
+	}
 }
 
 func TestTcp(t *testing.T) {
@@ -33,7 +27,8 @@ func TestTcp(t *testing.T) {
 			Channel: 1024,
 		},
 		Server: &tconf.Server{
-			Bind:         []string{":3101"},
+			Bind:         []string{":9999"},
+			IsWs:         true,
 			SndBuf:       4096,
 			RcvBuf:       4096,
 			KeepAlive:    false,

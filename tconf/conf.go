@@ -24,6 +24,7 @@ type Bucket struct {
 
 type Server struct {
 	Bind         []string
+	IsWs         bool
 	SndBuf       int
 	RcvBuf       int
 	KeepAlive    bool
